@@ -29,11 +29,11 @@ Importe este repositório com preset **Other**, diretório raiz `./`, sem comand
 
 A página está em `obrigado.html` e é publicada em `https://black-netfiscal.vercel.app/obrigado`. Use esse endereço na configuração de redirecionamento após a compra na plataforma de checkout. A página é estática e não consulta ou confirma o status de uma transação.
 
-O botão de download entrega `assets/guia-boas-vindas-netfiscal.pdf`, um guia de cinco páginas com orientações de acesso e os resumos das três formações. O link de suporte dentro do PDF leva à seção de ajuda da página, para que o destino de atendimento possa ser atualizado sem substituir o documento.
+O botão de download entrega `assets/guia-boas-vindas-netfiscal.pdf`, um guia de cinco páginas com orientações de acesso e os resumos das três formações. O botão de suporte do PDF abre diretamente o WhatsApp da equipe: **+55 75 8839-3783** (`https://wa.me/557588393783`).
 
-### Ativar os botões de suporte
+### Contato de suporte
 
-O contato ficou pendente a pedido do responsável. Preencha `window.NETFISCAL_SUPPORT_URL` em `assets/suporte-config.js` com a URL HTTPS do canal de atendimento e publique a alteração. Os três botões serão ativados e o aviso temporário será ocultado automaticamente. Até essa configuração, os botões permanecem desativados e a página informa que o canal ainda não está disponível. Nenhum número de outra marca ou da página de referência foi copiado.
+O contato **+55 75 8839-3783** está configurado na página principal, nos três botões da página de obrigado e no PDF. Para atualizar o contato, altere `window.NETFISCAL_SUPPORT_URL` em `assets/suporte-config.js`, o link de atendimento em `index.html` e o guia em PDF. Uma URL HTTPS válida ativa os botões da página de obrigado e oculta o aviso temporário automaticamente.
 
 ## Visualização local
 

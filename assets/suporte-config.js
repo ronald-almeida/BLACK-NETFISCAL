@@ -1,3 +1,2 @@
-// Preencha com o link HTTPS do canal de atendimento quando estiver disponível.
-// Exemplo de formato para WhatsApp: https://wa.me/CODIGODOPAISEDDDNUMERO
-window.NETFISCAL_SUPPORT_URL = '';
+// WhatsApp de suporte: +55 75 8839-3783.
+window.NETFISCAL_SUPPORT_URL = 'https://wa.me/557588393783';
