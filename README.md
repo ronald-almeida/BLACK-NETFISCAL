@@ -25,6 +25,16 @@ Edite `assets/checkout-config.js`: `mba`, `pos` e `imersao` correspondem às tr�
 
 Importe este repositório com preset **Other**, diretório raiz `./`, sem comandos de instalação ou build. A pasta de saída é `.`. A configuração está em `vercel.json`; não há dependências, banco de dados ou variáveis de ambiente.
 
+## Página de obrigado e guia de boas-vindas
+
+A página está em `obrigado.html` e é publicada em `https://black-netfiscal.vercel.app/obrigado`. Use esse endereço na configuração de redirecionamento após a compra na plataforma de checkout. A página é estática e não consulta ou confirma o status de uma transação.
+
+O botão de download entrega `assets/guia-boas-vindas-netfiscal.pdf`, um guia de cinco páginas com orientações de acesso e os resumos das três formações. O link de suporte dentro do PDF leva à seção de ajuda da página, para que o destino de atendimento possa ser atualizado sem substituir o documento.
+
+### Ativar os botões de suporte
+
+O contato ficou pendente a pedido do responsável. Preencha `window.NETFISCAL_SUPPORT_URL` em `assets/suporte-config.js` com a URL HTTPS do canal de atendimento e publique a alteração. Os três botões serão ativados e o aviso temporário será ocultado automaticamente. Até essa configuração, os botões permanecem desativados e a página informa que o canal ainda não está disponível. Nenhum número de outra marca ou da página de referência foi copiado.
+
 ## Visualização local
 
 Sirva a raiz do repositório com um servidor HTTP estático, por exemplo `python -m http.server 3000`, e acesse `http://localhost:3000`.
