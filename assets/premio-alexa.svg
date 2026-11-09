@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 220" fill="none"><defs>
+<linearGradient id="st" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffa070"/><stop offset="1" stop-color="#ff5a1f"/></linearGradient>
+<linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e94e1c" stop-opacity=".42"/><stop offset="1" stop-color="#e94e1c" stop-opacity=".06"/></linearGradient>
+<filter id="gl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs><g filter="url(#gl)" stroke="url(#st)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="150" cy="178" rx="84" ry="16" stroke-width="3" opacity=".8"/><ellipse cx="150" cy="178" rx="64" ry="11" stroke-width="2" opacity=".5"/><path d="M96 70 V160 C96 176 204 176 204 160 V70" fill="url(#fl)"/><ellipse cx="150" cy="70" rx="54" ry="17" fill="url(#fl)"/><ellipse cx="150" cy="70" rx="40" ry="11"/><path d="M96 150 C96 166 204 166 204 150" stroke-width="3"/><path d="M150 70 v0" stroke-width="6"/></g></svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#ff6a2e"/>
+  <g fill="#0b0b0c">
+    <!-- topo do capelo -->
+    <path d="M32 13 4 26l28 13 28-13z"/>
+    <!-- base do chapéu -->
+    <path d="M15 33v10c0 4.4 7.6 8 17 8s17-3.6 17-8V33L32 41z"/>
+  </g>
+  <!-- borla -->
+  <path d="M55 28.5V42" stroke="#0b0b0c" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+  <circle cx="55" cy="44.5" r="3.4" fill="#0b0b0c"/>
+</svg>
