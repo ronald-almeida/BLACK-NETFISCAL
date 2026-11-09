@@ -29,6 +29,10 @@ Importe este repositório com preset **Other**, diretório raiz `./`, sem comand
 
 Sirva a raiz do repositório com um servidor HTTP estático, por exemplo `python -m http.server 3000`, e acesse `http://localhost:3000`.
 
+## Condições atuais da oferta
+
+MBA: R$ 397,00. Pós: R$ 497,00. Imersão: R$ 697,00. Pagamento somente à vista via Pix. Os bônus das especializações são destinados aos 20 primeiros matriculados. Os preços exibidos na página não alteram os valores configurados nas plataformas de checkout.
+
 ## Conteúdo preservado
 
-Textos, preços, datas, condições da campanha, depoimentos, identidade visual e links institucionais permanecem conforme o material fornecido. Os scripts de coleta do formulário e os scripts específicos do Cloudflare da hospedagem anterior foram removidos.
+Datas, depoimentos, identidade visual e links institucionais permanecem conforme o material fornecido. Os scripts de coleta do formulário e os scripts específicos do Cloudflare da hospedagem anterior foram removidos.
