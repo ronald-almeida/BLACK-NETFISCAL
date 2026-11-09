@@ -6,7 +6,7 @@ Landing page estática baseada no HTML e nas imagens fornecidos, com os recursos
 
 Os botões de oferta abrem um modal com três produtos: MBA, Pós e Imersão. O visitante seleciona o produto e clica em **Ir para o pagamento**. Os botões de cada curso já abrem o modal com o curso marcado.
 
-O modal não solicita nome, e-mail ou WhatsApp e não envia dados para webhooks ou automações. Os links de checkout foram preservados do HTML original. As informações necessárias à compra são tratadas pelo checkout de destino.
+O modal não solicita nome, e-mail ou WhatsApp e não envia dados para webhooks ou automações. Os links de checkout foram atualizados conforme os destinos fornecidos pelo responsável pela página: MBA (`product=154220`), Pós (`product=154221`) e Imersão (`product=154222`). As informações necessárias à compra são tratadas pelo checkout de destino.
 
 ## Alterar os links
 
