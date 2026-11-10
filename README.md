@@ -5,7 +5,7 @@ Página de ofertas, três checkouts Pix nativos e boas-vindas. Publicação auto
 | Página | URL | Preço |
 | --- | --- | --- |
 | Ofertas | / | MBA, Pós e Imersão |
-| MBA | /checkout/mba | R$ 5 à vista via Pix (temporário para teste; preço original R$ 397) |
+| MBA | /checkout/mba | R$ 397 à vista via Pix |
 | Pós | /checkout/pos | R$ 497 à vista via Pix |
 | Imersão | /checkout/imersao | R$ 697 por ingresso, à vista via Pix |
 | Obrigado | /obrigado | Guia e suporte para liberação |

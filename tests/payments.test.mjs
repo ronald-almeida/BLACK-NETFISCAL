@@ -4,7 +4,7 @@ import { makePayments, validDocument } from '../lib/payments.js';
 import { validInput, memoryStore, fakeEnv, fakeGateway, paidEvent } from './fixtures.mjs';
 const setup = () => { const store = memoryStore(), gateway = fakeGateway(); return { store, gateway, api: makePayments({ store, env: fakeEnv, fetcher: gateway.fetcher }) }; };
 test('all three products use server prices, ignoring client amounts and discounts', async () => {
-  for (const [product, amount] of [['mba',5],['pos',497],['imersao',697]]) {
+  for (const [product, amount] of [['mba',397],['pos',497],['imersao',697]]) {
     const { api,gateway } = setup(); const result = await api.create({ ...validInput(product),amount:1,discount:9999 },'test');
     assert.equal(result.amount,amount);assert.equal(result.status,'PENDING');assert.equal(result.redirect,null);
     assert.equal(gateway.calls[0].input.amount,amount);assert.equal(gateway.calls[0].input.products[0].price,amount);
