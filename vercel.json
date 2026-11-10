@@ -1,9 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": null,
-  "installCommand": null,
-  "outputDirectory": ".",
+  "buildCommand": "node scripts/build.mjs",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "public",
+  "regions": ["gru1"],
+  "functions": { "api/*.js": { "maxDuration": 60 } },
+  "rewrites": [
+    { "source": "/checkout/mba", "destination": "/checkout.html" },
+    { "source": "/checkout/pos", "destination": "/checkout.html" },
+    { "source": "/checkout/imersao", "destination": "/checkout.html" }
+  ],
   "cleanUrls": true,
   "headers": [
     {

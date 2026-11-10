@@ -1,48 +1,69 @@
-# Black NetFiscal 2026
+# Black NetFiscal
 
-Landing page estática baseada no HTML e nas imagens fornecidos, com os recursos visuais originais hospedados neste repositório.
+Página de ofertas, três checkouts Pix nativos e boas-vindas. Publicação automática na Vercel a partir de main.
 
-## Fluxo de compra
+| Página | URL | Preço |
+| --- | --- | --- |
+| Ofertas | / | MBA, Pós e Imersão |
+| MBA | /checkout/mba | R$ 397 à vista via Pix |
+| Pós | /checkout/pos | R$ 497 à vista via Pix |
+| Imersão | /checkout/imersao | R$ 697 por ingresso, à vista via Pix |
+| Obrigado | /obrigado | Guia e suporte para liberação |
 
-Os botões de oferta abrem um modal com três produtos: MBA, Pós e Imersão. O visitante seleciona o produto e clica em **Ir para o pagamento**. Os botões de cada curso já abrem o modal com o curso marcado.
+O modal da página inicial só seleciona o produto. Os dados pessoais são preenchidos no checkout. Os valores são determinados no servidor em lib/catalog.js; valores enviados pelo navegador não alteram a cobrança. A Imersão aceita de 1 a 5 ingressos por pedido, com os respectivos participantes. A condição Black já está incluída no preço, sem desconto adicional por cupom.
 
-O modal não solicita nome, e-mail ou WhatsApp e não envia dados para webhooks ou automações. Os links de checkout foram atualizados conforme os destinos fornecidos pelo responsável pela página: MBA (`product=154220`), Pós (`product=154221`) e Imersão (`product=154222`). As informações necessárias à compra são tratadas pelo checkout de destino.
-
-## Alterar os links
-
-Edite `assets/checkout-config.js`: `mba`, `pos` e `imersao` correspondem às três opções. Use URLs completas HTTPS. Os parâmetros das ofertas são preservados no redirecionamento.
-
-## Estrutura
-
-- `index.html`: conteúdo da página e modal.
-- `assets/styles.css`: estilos e regras responsivas.
-- `assets/site.js`: interação do modal e efeitos da página.
-- `assets/checkout-config.js`: destinos de pagamento.
-- `assets/`: imagens, ícones e fonte locais.
-- `vercel.json`: configuração de hospedagem estática.
+O suporte de todas as páginas e do PDF é **+55 75 8839-3783** (https://wa.me/557588393783). A equipe faz a liberação do curso ou orienta a participação na Imersão. Não há envio automático de credenciais nem matrícula automática numa plataforma de ensino.
 
 ## Vercel
 
-Importe este repositório com preset **Other**, diretório raiz `./`, sem comandos de instalação ou build. A pasta de saída é `.`. A configuração está em `vercel.json`; não há dependências, banco de dados ou variáveis de ambiente.
+Node.js 24; preset Other; diretório raiz ./; instalação pnpm install --frozen-lockfile; build node scripts/build.mjs; saída public. Functions na região gru1.
 
-## Página de obrigado e guia de boas-vindas
+Somente HTML e assets são copiados para a saída pública. APIs, bibliotecas de servidor, testes, scripts e variáveis de ambiente não são publicados como arquivos estáticos.
 
-A página está em `obrigado.html` e é publicada em `https://black-netfiscal.vercel.app/obrigado`. Use esse endereço na configuração de redirecionamento após a compra na plataforma de checkout. A página é estática e não consulta ou confirma o status de uma transação.
+O armazenamento **privado** Vercel Blob netfiscal-checkout-orders está conectado ao projeto. O SDK utiliza OIDC e BLOB_STORE_ID.
 
-O botão de download entrega `assets/guia-boas-vindas-netfiscal.pdf`, um guia de cinco páginas com orientações de acesso e os resumos das três formações. O botão de suporte do PDF abre diretamente o WhatsApp da equipe: **+55 75 8839-3783** (`https://wa.me/557588393783`).
+Cadastre as variáveis no projeto, em Production (e em Preview somente se for usar uma conta de teste):
 
-### Contato de suporte
+| Variável | Conteúdo |
+| --- | --- |
+| POSEIDON_PUBLIC_KEY | Chave pública da conta do vendedor |
+| POSEIDON_SECRET_KEY | Chave secreta da conta do vendedor, como Secret/Sensitive |
+| BLOB_STORE_ID | Criada ao conectar o armazenamento privado |
+| SITE_URL | Opcional; padrão https://black-netfiscal.vercel.app |
 
-O contato **+55 75 8839-3783** está configurado na página principal, nos três botões da página de obrigado e no PDF. Para atualizar o contato, altere `window.NETFISCAL_SUPPORT_URL` em `assets/suporte-config.js`, o link de atendimento em `index.html` e o guia em PDF. Uma URL HTTPS válida ativa os botões da página de obrigado e oculta o aviso temporário automaticamente.
+Faça novo deploy depois de alterar variáveis. Nunca coloque chaves em assets, HTML, commits, capturas ou mensagens. O checkout permanece indisponível se faltar configuração.
 
-## Visualização local
+## Integração Poseidon
 
-Sirva a raiz do repositório com um servidor HTTP estático, por exemplo `python -m http.server 3000`, e acesse `http://localhost:3000`.
+Documentação: https://app.poseidonpay.site/docs/v1/llms-full.txt
 
-## Condições atuais da oferta
+1. POST /api/checkout valida produto, quantidade, CPF/CNPJ e campos. O identificador de tentativa permanece na sessão do navegador para evitar duplicidade em reenvios.
+2. O servidor reserva o pedido privado e chama POST https://app.poseidonpay.site/api/v1/gateway/pix/receive, com valores em reais, credenciais no servidor e callbackUrl fixo https://black-netfiscal.vercel.app/api/pix-webhook.
+3. O QR Code é gerado localmente a partir de pix.code, sem serviços externos de QR.
+4. POST /api/pix-webhook compara o token da cobrança, ID, identificador, moeda, método, valor e status. Apenas TRANSACTION_PAID com COMPLETED confirma o pagamento. Notificações repetidas são idempotentes e não desfazem estornos.
+5. O navegador consulta **nosso armazenamento**, por /api/order-status, com token de pedido assinado. Não faz polling da Poseidon. O redirecionamento para /obrigado?origem=checkout acontece após a confirmação por webhook.
 
-MBA: R$ 397,00. Pós: R$ 497,00. Imersão: R$ 697,00. Pagamento somente à vista via Pix. Os bônus das especializações são destinados aos 20 primeiros matriculados. Os preços exibidos na página não alteram os valores configurados nas plataformas de checkout.
+Informações do aluno, pagador e participantes ficam no Blob privado. Não são retornadas na consulta de status nem escritas em logs. O pagador é enviado como client; aluno, endereço e participantes são enviados nos metadados. A equipe pode consultar a transação e os metadados no painel Poseidon para atender o comprador.
 
-## Conteúdo preservado
+Falhas ambíguas do gateway ficam em REVIEW; outra cobrança não é criada automaticamente. Consulte a transação no painel pelo identificador nf-... antes de orientar nova tentativa. O limite é de seis novas tentativas por IP a cada hora. Escritas do pedido usam ETags para evitar sobrescrever atualizações simultâneas.
 
-Datas, depoimentos, identidade visual e links institucionais permanecem conforme o material fornecido. Os scripts de coleta do formulário e os scripts específicos do Cloudflare da hospedagem anterior foram removidos.
+O Blob mantém os registros até remoção pelo responsável. Defina a retenção da operação; preserve os registros necessários e remova apenas dados operacionais antigos após revisão. Não há exclusão automática.
+
+## Desenvolvimento e testes
+
+Execute pnpm install, pnpm test, pnpm build e pnpm dev.
+
+Para testar sem cobranças reais, execute node scripts/dev.mjs --mock. Esse modo existe somente no servidor local, usa dados em memória e gera um QR de teste sem valor de pagamento. O endpoint local /__test__/paid simula um webhook para testes do navegador. Nenhum endpoint de simulação é publicado.
+
+Os testes cobrem os três preços, participantes, documentos inválidos, reenvios simultâneos, token/valor adulterado, ordem das notificações, estorno, timeout, falta de configuração e limite de tentativas. Antes de enviar tráfego comercial, o responsável deve concluir uma compra controlada, conferindo o recebedor no banco e a confirmação na Poseidon.
+
+## Arquivos
+
+- index.html, assets/styles.css, assets/site.js: ofertas e modal.
+- assets/checkout-config.js: destinos dos botões da oferta.
+- checkout.html, assets/checkout.js, assets/checkout.css: os três checkouts.
+- api/ e lib/: integração Pix e armazenamento privado.
+- obrigado.html, assets/obrigado.*, assets/suporte-config.js: pós-compra e suporte.
+- assets/guia-boas-vindas-netfiscal.pdf: guia de cinco páginas.
+
+Banners fornecidos são usados localmente, com sobreposição em HTML para atualizar a condição de 200 para 20 primeiros. Não são exibidas marcas de processadores que não participam deste checkout. O guia é material explicativo e a página de obrigado não concede acesso automaticamente.
