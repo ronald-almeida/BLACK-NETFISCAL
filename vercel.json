@@ -7,9 +7,9 @@
   "regions": ["gru1"],
   "functions": { "api/*.js": { "maxDuration": 60 } },
   "rewrites": [
-    { "source": "/checkout/mba", "destination": "/checkout.html" },
-    { "source": "/checkout/pos", "destination": "/checkout.html" },
-    { "source": "/checkout/imersao", "destination": "/checkout.html" }
+    { "source": "/checkout/mba", "destination": "/checkout" },
+    { "source": "/checkout/pos", "destination": "/checkout" },
+    { "source": "/checkout/imersao", "destination": "/checkout" }
   ],
   "cleanUrls": true,
   "headers": [
