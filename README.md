@@ -12,7 +12,7 @@ Página de ofertas, três checkouts Pix nativos e boas-vindas. Publicação auto
 
 O modal da página inicial só seleciona o produto. Os dados pessoais são preenchidos no checkout. Os valores são determinados no servidor em lib/catalog.js; valores enviados pelo navegador não alteram a cobrança. A Imersão aceita de 1 a 5 ingressos por pedido, com os respectivos participantes. A condição Black já está incluída no preço, sem desconto adicional por cupom.
 
-O suporte de todas as páginas e do PDF é **+55 75 8839-3783** (https://wa.me/557588393783). A equipe faz a liberação do curso ou orienta a participação na Imersão. Não há envio automático de credenciais nem matrícula automática numa plataforma de ensino.
+O suporte de todas as páginas e do PDF é **+55 75 98839-3742** (https://wa.me/5575988393742). A equipe faz a liberação do curso ou orienta a participação na Imersão. Não há envio automático de credenciais nem matrícula automática numa plataforma de ensino.
 
 ## Vercel
 

@@ -1,2 +1,2 @@
-// WhatsApp de suporte: +55 75 8839-3783.
-window.NETFISCAL_SUPPORT_URL = 'https://wa.me/557588393783';
+// WhatsApp de suporte: +55 75 98839-3742.
+window.NETFISCAL_SUPPORT_URL = 'https://wa.me/5575988393742';
