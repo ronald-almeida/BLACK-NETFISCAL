@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const catalog = {
-    mba: { name: 'MBA em Reforma Tributária & Gestão Tributária', title: 'MBA - TURMA 7 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 397 },
+    mba: { name: 'MBA em Reforma Tributária & Gestão Tributária', title: 'MBA - TURMA 7 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 5 },
     pos: { name: 'Pós em Planejamento Tributário', title: 'PÓS - TURMA 2 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 497 },
     imersao: { name: 'Imersão Reforma Tributária', title: 'Imersão Reforma Tributária', price: 697 }
   };
