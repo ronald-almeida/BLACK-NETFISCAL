@@ -137,6 +137,28 @@ test('FireBot server rate limit persists across instances', async () => {
   const second=makeFirebotPayments({store:ctx.store,env:firebotEnv,fetcher:ctx.gateway.fetcher});
   await assert.rejects(()=>second.create(validInput(),'test'),/Muitas tentativas/);assert.equal(ctx.gateway.calls.length,6);
 });
+
+test('authorized Imersão test permits exactly one extra charge without relaxing the general limit', async () => {
+  const ctx=setup();ctx.advance(Date.parse('2026-11-11T23:30:00Z')-Date.now());
+  for(let i=0;i<6;i++)await ctx.api.create(validInput(),'test');
+  const testInput=()=>({...validInput('imersao'),buyer:{name:'Teste Tecnico Checkout',email:'checkout-test@example.com',phone:'11999998888',document:'11144477735'},confirmEmail:'checkout-test@example.com'});
+  await assert.rejects(()=>ctx.api.create({...testInput(),product:'pos'},'test'),/Muitas tentativas/);
+  await assert.rejects(()=>ctx.api.create({...testInput(),buyer:{...testInput().buyer,name:'Outro Nome'}},'test'),/Muitas tentativas/);
+  const input=testInput(),order=await ctx.api.create(input,'test');assert.equal(order.amount,6);assert.equal(order.status,'PENDING');
+  assert.equal((await ctx.api.create(input,'test')).orderId,order.orderId);
+  await assert.rejects(()=>ctx.api.create(testInput(),'test'),/Muitas tentativas/);
+  for(let i=0;i<6;i++)await ctx.api.create(validInput(),'another-ip');
+  await assert.rejects(()=>ctx.api.create(testInput(),'another-ip'),/Muitas tentativas/);
+  assert.equal(ctx.gateway.calls.length,13);
+});
+
+test('the temporary Imersão test grant expires and cannot be reused later', async()=>{
+  const ctx=setup();ctx.advance(Date.parse('2026-11-12T04:30:00Z')-Date.now());
+  for(let i=0;i<6;i++)await ctx.api.create(validInput(),'test');
+  const input={...validInput('imersao'),buyer:{name:'Teste Tecnico Checkout',email:'checkout-test@example.com',phone:'11999998888',document:'11144477735'},confirmEmail:'checkout-test@example.com'};
+  await assert.rejects(()=>ctx.api.create(input,'test'),/Muitas tentativas/);
+  assert.equal(ctx.gateway.calls.length,6);
+});
 test('a slow FireBot lookup cannot undo a concurrent signed refund', async () => {
   const ctx=setup();let resolveLookup,started;const waiting=new Promise(r=>{started=r;});
   const api=makeFirebotPayments({store:ctx.store,env:firebotEnv,now:()=>Date.now()+20000,logger:{},fetcher:async()=>{started();return new Promise(r=>{resolveLookup=r;});}});
