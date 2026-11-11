@@ -2,9 +2,9 @@
 (() => {
   const catalog = {
     // Temporary live payment test; regular prices: 397, 497 and 697.
-    mba: { name: 'MBA em Reforma Tributária & Gestão Tributária', title: 'MBA - TURMA 7 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 3 },
-    pos: { name: 'Pós em Planejamento Tributário', title: 'PÓS - TURMA 2 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 3 },
-    imersao: { name: 'Imersão Reforma Tributária', title: 'Imersão Reforma Tributária', price: 3 }
+    mba: { name: 'MBA em Reforma Tributária & Gestão Tributária', title: 'MBA - TURMA 7 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 6 },
+    pos: { name: 'Pós em Planejamento Tributário', title: 'PÓS - TURMA 2 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 6 },
+    imersao: { name: 'Imersão Reforma Tributária', title: 'Imersão Reforma Tributária', price: 6 }
   };
   const productId = location.pathname.split('/').filter(Boolean).pop() === 'checkout.html' ? new URLSearchParams(location.search).get('produto') : location.pathname.split('/').filter(Boolean).pop();
   const product = Object.hasOwn(catalog, productId) ? catalog[productId] : null;
@@ -65,6 +65,15 @@
   function rememberOrder(value) { try { sessionStorage.setItem(storageKey, JSON.stringify({token:value.token,attemptId})); } catch {} }
   function scheduleCheck() { clearTimeout(timer); if (order && (['PENDING','CREATING'].includes(order.status) || order.recoveryPending) && !document.hidden) timer = setTimeout(checkStatus, 12000); }
   function displayOrder(value) {
+    if (value.status === 'FAILED' && value.retryable === true && !value.pix?.code) {
+      clearTimeout(timer); order = null; attemptId = crypto.randomUUID();
+      try { sessionStorage.removeItem(storageKey); } catch {}
+      el('checkout-fields').hidden = false; el('pix-panel').hidden = true;
+      el('pay-button').disabled = false; el('pay-button').textContent = 'Gerar Pix';
+      el('form-alert').textContent = value.failure?.minimum && product.price >= value.failure.minimum
+        ? '' : value.failure?.message || 'Esta cobrança foi recusada. Você pode tentar novamente.';
+      return;
+    }
     order = value; rememberOrder(value);
     if(value.status==='COMPLETED'){clearTimeout(timer);try{sessionStorage.removeItem(storageKey);}catch{}location.assign('/obrigado?origem=checkout');return;}
     if(event){quantity=value.quantity;el('quantity').value=quantity;el('minus').disabled=true;el('plus').disabled=true;}
@@ -77,8 +86,8 @@
     el('copy-pix').disabled = !hasPix;
     if (hasPix && value.pix.image) el('qr-image').src = value.pix.image;
     else el('qr-image').removeAttribute('src');
-    const errors = { EXPIRED:'Este Pix expirou. Fale com o suporte.', FAILED:'Pagamento não concluído. Fale com o suporte.', REFUNDED:'Pagamento estornado. Fale com o suporte.', CHARGED_BACK:'Pagamento em análise. Fale com o suporte.' };
-    el('form-alert').textContent = hasPix ? '' : errors[value.status] || 'Pix indisponível no momento. Fale com o suporte.';
+    const errors = { EXPIRED:'Este Pix expirou.', FAILED:'Pagamento não concluído.', REFUNDED:'Pagamento estornado.', CHARGED_BACK:'Pagamento em análise.' };
+    el('form-alert').textContent = hasPix ? '' : value.failure?.message || errors[value.status] || 'Não foi possível confirmar esta cobrança.';
     scheduleCheck();
   }
   async function checkStatus() {
