@@ -40,12 +40,16 @@ Documentação: https://app.poseidonpay.site/docs/v1/llms-full.txt
 1. POST /api/checkout valida produto, quantidade, CPF/CNPJ e campos. O identificador de tentativa permanece na sessão do navegador para evitar duplicidade em reenvios.
 2. O servidor reserva o pedido privado e chama POST https://app.poseidonpay.site/api/v1/gateway/pix/receive, com valores em reais, credenciais no servidor e callbackUrl fixo https://black-netfiscal.vercel.app/api/pix-webhook.
 3. O QR Code é gerado localmente a partir de pix.code, sem serviços externos de QR.
-4. POST /api/pix-webhook compara o token da cobrança, ID, identificador, moeda, método, valor e status. Apenas TRANSACTION_PAID com COMPLETED confirma o pagamento. Notificações repetidas são idempotentes e não desfazem estornos.
-5. O navegador consulta **nosso armazenamento**, por /api/order-status, com token de pedido assinado. Não faz polling da Poseidon. O redirecionamento para /obrigado?origem=checkout acontece após a confirmação por webhook.
+4. POST /api/pix-webhook compara o token da cobrança, ID, identificador, moeda, método, valor e status. Quando o retorno da criação se perde e não há token do webhook, a notificação nunca é aceita como prova: o servidor consulta a transação na API autenticada, confere sua identidade e valor e exige COMPLETED para confirmar o pagamento. Notificações repetidas são idempotentes e não desfazem estornos.
+5. O navegador consulta nosso servidor por /api/order-status, com token de pedido assinado. No fluxo normal, o servidor lê apenas o armazenamento privado. O redirecionamento para /obrigado?origem=checkout acontece após a confirmação verificada do pagamento.
 
 Informações do aluno, pagador e participantes ficam no Blob privado. Não são retornadas na consulta de status nem escritas em logs. O pagador é enviado como client; aluno, endereço e participantes são enviados nos metadados. A equipe pode consultar a transação e os metadados no painel Poseidon para atender o comprador.
 
-Falhas ambíguas do gateway ficam em REVIEW; outra cobrança não é criada automaticamente. Consulte a transação no painel pelo identificador nf-... antes de orientar nova tentativa. O limite é de seis novas tentativas por IP a cada hora. Escritas do pedido usam ETags para evitar sobrescrever atualizações simultâneas.
+Falhas ambíguas do gateway ficam em REVIEW; outra cobrança não é criada automaticamente. O checkout recupera o Pix existente por GET /gateway/transactions?clientIdentifier=nf-..., com até três consultas espaçadas por pelo menos um minuto, sem repetir o POST de cobrança. O servidor verifica ID, identificador, moeda, método e valores antes de recuperar pixInformation.qrCode. Uma reserva atômica evita consultas simultâneas. Se a recuperação não for possível, a tela orienta contato com o suporte.
+
+O webhookToken da resposta é opcional na documentação. Sua ausência não descarta um Pix válido: pedidos excepcionais sem esse token são confirmados pela API autenticada quando chega uma notificação, com intervalo mínimo de um minuto, ou pela consulta autenticada do comprador, com intervalo mínimo de cinco minutos. Pedidos normais continuam usando exclusivamente os webhooks. Nenhuma confirmação vem de dados enviados pelo navegador ou de notificações não verificadas.
+
+Logs registram somente ID operacional, códigos HTTP, presença dos campos e resultado da recuperação, sem códigos Pix, credenciais, documentos ou dados pessoais. O limite é de seis novas tentativas por IP a cada hora. Escritas do pedido usam ETags para evitar sobrescrever atualizações simultâneas.
 
 O Blob mantém os registros até remoção pelo responsável. Defina a retenção da operação; preserve os registros necessários e remova apenas dados operacionais antigos após revisão. Não há exclusão automática.
 
@@ -54,6 +58,8 @@ O Blob mantém os registros até remoção pelo responsável. Defina a retençã
 Execute pnpm install, pnpm test, pnpm build e pnpm dev.
 
 Para testar sem cobranças reais, execute node scripts/dev.mjs --mock. Esse modo existe somente no servidor local, usa dados em memória e gera um QR de teste sem valor de pagamento. O endpoint local /__test__/paid simula um webhook para testes do navegador. Nenhum endpoint de simulação é publicado.
+
+Para reproduzir a resposta incompleta e verificar a recuperação automática do QR, use node scripts/dev.mjs --mock --recover-pix. tests/pix-recovery.test.mjs cobre timeout, resposta incompleta, token opcional, consulta autenticada, divergência de dados, concorrência, limites de recuperação e preservação de confirmações/estornos.
 
 Os testes cobrem os três preços, participantes, documentos inválidos, reenvios simultâneos, token/valor adulterado, ordem das notificações, estorno, timeout, falta de configuração e limite de tentativas. Antes de enviar tráfego comercial, o responsável deve concluir uma compra controlada, conferindo o recebedor no banco e a confirmação na Poseidon.
 

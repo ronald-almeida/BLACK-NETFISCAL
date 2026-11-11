@@ -57,26 +57,27 @@
   function adjustQuantity(delta) { quantity = Math.max(1,Math.min(5,quantity+delta)); el('quantity').value = quantity; el('total').textContent = money(quantity*product.price); el('minus').disabled = quantity===1; el('plus').disabled = quantity===5; renderParticipants(); }
   el('minus')?.addEventListener('click',()=>adjustQuantity(-1));el('plus')?.addEventListener('click',()=>adjustQuantity(1));renderParticipants();
   async function callApi(path, payload) {
-    const response = await fetch(path, { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(45000) });
+    const response = await fetch(path, { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(60000) });
     const data = await response.json();
     if (!response.ok) { const error = new Error(data.error || 'Não foi possível concluir.'); error.fields = data.fields; throw error; }
     return data;
   }
   function rememberOrder(value) { try { sessionStorage.setItem(storageKey, JSON.stringify({token:value.token,attemptId})); } catch {} }
-  function scheduleCheck() { clearTimeout(timer); if (order && ['PENDING','CREATING'].includes(order.status) && !document.hidden) timer = setTimeout(checkStatus, 12000); }
+  function scheduleCheck() { clearTimeout(timer); if (order && (['PENDING','CREATING'].includes(order.status) || order.recoveryPending) && !document.hidden) timer = setTimeout(checkStatus, 12000); }
   function displayOrder(value) {
     order = value; rememberOrder(value); el('checkout-fields').hidden = true; el('pix-panel').hidden = false;
     if(event){quantity=value.quantity;el('quantity').value=quantity;el('minus').disabled=true;el('plus').disabled=true;}
     el('pix-value').textContent = `${product.name} · ${money(value.amount)} à vista`;
     el('order-reference').textContent = `Pedido: ${value.orderId}`;
     const hasPix = Boolean(value.pix?.code);
-    el('qr-image').hidden = !hasPix; el('pix-code').hidden = !hasPix; el('copy-pix').hidden = !hasPix;
+    el('qr-image').hidden = !hasPix || !value.pix.image; el('pix-code').hidden = !hasPix; el('copy-pix').hidden = !hasPix;
     el('pix-panel').querySelector('label').hidden = !hasPix;el('pix-panel').querySelector('.pix-instructions').hidden = !hasPix;
-    if (hasPix) { el('qr-image').src = value.pix.image; el('pix-code').value = value.pix.code; }
+    if (hasPix) { if(value.pix.image) el('qr-image').src = value.pix.image; el('pix-code').value = value.pix.code; }
     el('pix-expiration').textContent = value.pix?.expiresAt ? `Válido até ${new Date(value.pix.expiresAt).toLocaleString('pt-BR')}` : '';
     const states = { PENDING:'Aguardando a confirmação do pagamento. Esta página será atualizada automaticamente.', CREATING:'Estamos preparando seu Pix. Aguarde sem enviar outro pedido.', REVIEW:'Não foi possível confirmar a geração do Pix. Entre em contato com o suporte e informe o número do pedido antes de tentar novamente.', EXPIRED:'Este Pix expirou. Se você já pagou, aguarde a confirmação ou fale com o suporte.', FAILED:'O pagamento não foi concluído. Fale com o suporte para receber orientação.', REFUNDED:'Este pagamento foi estornado. Consulte nosso suporte.', CHARGED_BACK:'Este pagamento está em análise. Consulte nosso suporte.', COMPLETED:'Pagamento confirmado! Você será encaminhado para os próximos passos.' };
-    el('payment-state').textContent = states[value.status] || 'Aguardando atualização do pedido.';
-    el('check-payment').hidden = ['REVIEW','FAILED','REFUNDED','CHARGED_BACK','COMPLETED'].includes(value.status);
+    el('payment-state').textContent = value.status === 'REVIEW' && value.recoveryPending ? 'Estamos recuperando o Pix deste pedido. Aguarde: o código aparecerá aqui automaticamente. Não é necessário fazer outro pedido.' : states[value.status] || 'Aguardando atualização do pedido.';
+    el('check-payment').hidden = (value.status === 'REVIEW' && !value.recoveryPending) || ['FAILED','REFUNDED','CHARGED_BACK','COMPLETED'].includes(value.status);
+    el('check-payment').textContent = value.recoveryPending ? 'Atualizar Pix' : 'Já paguei · Verificar pagamento';
     if (value.status !== 'PENDING') { el('copy-pix').disabled=true; el('qr-image').hidden=true; } else el('copy-pix').disabled=false;
     if(value.status==='COMPLETED'){clearTimeout(timer);el('payment-state').classList.add('status-success');sessionStorage.removeItem(storageKey);location.assign('/obrigado?origem=checkout');return;}
     scheduleCheck();

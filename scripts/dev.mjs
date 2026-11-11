@@ -5,7 +5,17 @@ import { makePayments } from '../lib/payments.js';
 import { memoryStore, fakeEnv, fakeGateway, paidEvent } from '../tests/fixtures.mjs';
 const mock = process.argv.includes('--mock');
 const testStore = memoryStore();
-const payments = mock ? makePayments({store:testStore,env:fakeEnv,fetcher:fakeGateway().fetcher}) : null;
+const mockGateway = fakeGateway(), mockTransactions = new Map();
+const mockFetcher = async (url, options) => {
+  if (options.method === 'GET') return Response.json(mockTransactions.get(new URL(url).searchParams.get('clientIdentifier')) || {}, { status: mockTransactions.has(new URL(url).searchParams.get('clientIdentifier')) ? 200 : 404 });
+  const response = await mockGateway.fetcher(url, options);
+  if (!process.argv.includes('--recover-pix')) return response;
+  const value = await response.json(), input = JSON.parse(options.body);
+  mockTransactions.set(input.identifier, { id: value.transactionId, clientIdentifier: input.identifier, amount: input.amount,
+    chargeAmount: input.amount, currency: 'BRL', paymentMethod: 'PIX', status: 'PENDING', pixInformation: { qrCode: value.pix.code } });
+  return Response.json({ transactionId: value.transactionId, status: 'PENDING', webhookToken: value.webhookToken });
+};
+const payments = mock ? makePayments({store:testStore,env:fakeEnv,fetcher:mockFetcher}) : null;
 const root = resolve('public');
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.woff2':'font/woff2','.pdf':'application/pdf'};
 http.createServer(async(req,res)=>{
