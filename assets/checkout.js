@@ -28,7 +28,7 @@
   const eventStart = `${productRow}<div class="event-meta">♧ Evento<small>28/11/2026 às 09h até 29/11/2026 às 13h30</small></div><div class="event-meta">♧ Local<small>Espaço Órizon - Rua Conselheiro Saraiva, 207 - Santana, São Paulo</small></div><div class="quantity-table"><div class="quantity-head"><span>Lote</span><span>Quantidade</span></div><div class="quantity-content"><span>Turma 21 - 11/26 (Última do ano)</span><div class="quantity-control"><button type="button" id="minus" aria-label="Diminuir quantidade" disabled>−</button><output id="quantity" aria-live="polite">1</output><button type="button" id="plus" aria-label="Aumentar quantidade">+</button></div></div></div><p class="transfer-note">Após a validação dos ingressos, eles são intransferíveis.</p>`;
   const eventPayment = `<div class="event-pix"><div class="event-pix-title"><span aria-hidden="true">◉</span>${pix}Pix</div><div class="event-benefits"><div class="event-benefit"><span aria-hidden="true">◷</span><strong>Aprovação do pagamento</strong><p>O pagamento com Pix costuma ser processado em poucos instantes.</p></div><div class="event-benefit">${shield}<strong>Transação segura</strong><p>Confira os dados e o valor no aplicativo do seu banco antes de confirmar.</p></div><div class="event-benefit">${pix}<strong>Finalize sua compra com facilidade</strong><p>Acesse a área Pix no aplicativo do seu banco e escaneie o QR Code ou use o código copia e cola.</p></div></div></div>`;
   const payment = `<fieldset class="payment-heading"><legend><span class="step">03</span>${event ? 'Escolha a forma de pagamento' : 'Pagamento'}</legend><div class="form-section">${event ? eventPayment : `<div class="pix-choice">${pix}<span>Pix</span></div>`}<p class="payment-copy">Ao clicar em “Gerar Pix” será gerado um QR Code e um código Pix Copia e Cola com instruções para você realizar o pagamento.</p><div class="product-total"><strong>Total</strong><span id="total">${money(product.price)}</span></div><div class="unavailable-note" id="availability" hidden></div><div class="form-alert" id="form-alert" role="alert" tabindex="-1"></div><button class="pay-button" type="submit" id="pay-button">Gerar Pix</button><p class="small-print">Ao continuar, seus dados serão usados para processar esta compra e orientar sua matrícula. Após o pagamento, nossa equipe fará a liberação pelo <a href="${support}" target="_blank" rel="noopener noreferrer">suporte</a>.</p></div></fieldset>`;
-  const pixPanel = `<section class="pix-panel" id="pix-panel" hidden aria-labelledby="pix-title" tabindex="-1"><h2 id="pix-title">Pague com Pix</h2><p id="pix-value"></p><img class="qr" id="qr-image" alt="QR Code Pix do seu pedido" width="300" height="300"><ol class="pix-instructions"><li>Abra o aplicativo do seu banco e escolha Pix.</li><li>Escaneie o QR Code ou copie o código abaixo.</li><li>Confira o valor e o recebedor e confirme no banco.</li></ol><label for="pix-code">Pix Copia e Cola</label><textarea readonly class="pix-code" id="pix-code"></textarea><button type="button" class="copy-button" id="copy-pix">Copiar código Pix</button><p id="pix-expiration"></p><p class="payment-state" id="payment-state" role="status">Aguardando pagamento…</p><button class="manual-check" type="button" id="check-payment">Já paguei, verificar confirmação</button><p class="order-reference" id="order-reference"></p><p>Precisa de ajuda? <a href="${support}" target="_blank" rel="noopener noreferrer">Falar com o suporte</a></p></section>`;
+  const pixPanel = `<section class="pix-panel" id="pix-panel" hidden aria-labelledby="pix-title" tabindex="-1"><h2 id="pix-title">Pague com Pix</h2><p id="pix-value"></p><img class="qr" id="qr-image" alt="QR Code Pix do seu pedido" width="300" height="300"><label for="pix-code">Pix Copia e Cola</label><textarea readonly class="pix-code" id="pix-code"></textarea><button type="button" class="copy-button" id="copy-pix" aria-live="polite">Pix Copia e Cola</button></section>`;
   const form = `<div class="card form-card ${event ? 'event-form' : ''}" id="purchase">${event ? eventStart : ''}<form id="payment-form" novalidate><div id="checkout-fields"><fieldset><legend><span class="step">01</span>Dados pessoais</legend><p class="country"><span>🇧🇷</span>Brasil · Pagamento em reais</p><div class="form-section">${personal}</div></fieldset><fieldset><legend><span class="step">02</span>Endereço de entrega</legend><div class="form-section">${event ? field('zipCode', 'Código postal (CEP)', 'Digite aqui seu CEP', { autocomplete: 'postal-code', inputmode: 'numeric', maxlength: 9 }) : address}</div></fieldset>${event ? '<div id="participants"></div>' + coupon : ''}${payment}</div></form>${pixPanel}${event ? `<div class="event-support">NETFISCAL · 7 dias de garantia<br><a href="mailto:suporte@netfiscal.net">suporte@netfiscal.net</a><br><a href="${support}" target="_blank" rel="noopener noreferrer">Suporte: +55 75 98839-3742</a></div>` : ''}<p class="small-print">Pagamento seguro</p></div>`;
   const footer = `<footer class="checkout-footer"><a href="/">Voltar à página principal</a> · <a href="${support}" target="_blank" rel="noopener noreferrer">Suporte: +55 75 98839-3742</a><p>© 2026 NetFiscal</p></footer>`;
   document.title = `${product.name} — ${money(product.price)} | NetFiscal`;
@@ -65,31 +65,30 @@
   function rememberOrder(value) { try { sessionStorage.setItem(storageKey, JSON.stringify({token:value.token,attemptId})); } catch {} }
   function scheduleCheck() { clearTimeout(timer); if (order && (['PENDING','CREATING'].includes(order.status) || order.recoveryPending) && !document.hidden) timer = setTimeout(checkStatus, 12000); }
   function displayOrder(value) {
-    order = value; rememberOrder(value); el('checkout-fields').hidden = true; el('pix-panel').hidden = false;
+    order = value; rememberOrder(value);
+    if(value.status==='COMPLETED'){clearTimeout(timer);try{sessionStorage.removeItem(storageKey);}catch{}location.assign('/obrigado?origem=checkout');return;}
     if(event){quantity=value.quantity;el('quantity').value=quantity;el('minus').disabled=true;el('plus').disabled=true;}
+    const hasPix = value.status === 'PENDING' && Boolean(value.pix?.code);
+    el('checkout-fields').hidden = hasPix; el('pix-panel').hidden = !hasPix;
+    el('pay-button').disabled = true;
     el('pix-value').textContent = `${product.name} · ${money(value.amount)} à vista`;
-    el('order-reference').textContent = `Pedido: ${value.orderId}`;
-    const hasPix = Boolean(value.pix?.code);
-    el('qr-image').hidden = !hasPix || !value.pix.image; el('pix-code').hidden = !hasPix; el('copy-pix').hidden = !hasPix;
-    el('pix-panel').querySelector('label').hidden = !hasPix;el('pix-panel').querySelector('.pix-instructions').hidden = !hasPix;
-    if (hasPix) { if(value.pix.image) el('qr-image').src = value.pix.image; el('pix-code').value = value.pix.code; }
-    el('pix-expiration').textContent = value.pix?.expiresAt ? `Válido até ${new Date(value.pix.expiresAt).toLocaleString('pt-BR')}` : '';
-    const states = { PENDING:'Aguardando a confirmação do pagamento. Esta página será atualizada automaticamente.', CREATING:'Estamos preparando seu Pix. Aguarde sem enviar outro pedido.', REVIEW:'Não foi possível confirmar a geração do Pix. Entre em contato com o suporte e informe o número do pedido antes de tentar novamente.', EXPIRED:'Este Pix expirou. Se você já pagou, aguarde a confirmação ou fale com o suporte.', FAILED:'O pagamento não foi concluído. Fale com o suporte para receber orientação.', REFUNDED:'Este pagamento foi estornado. Consulte nosso suporte.', CHARGED_BACK:'Este pagamento está em análise. Consulte nosso suporte.', COMPLETED:'Pagamento confirmado! Você será encaminhado para os próximos passos.' };
-    el('payment-state').textContent = value.status === 'REVIEW' && value.recoveryPending ? 'Estamos recuperando o Pix deste pedido. Aguarde: o código aparecerá aqui automaticamente. Não é necessário fazer outro pedido.' : states[value.status] || 'Aguardando atualização do pedido.';
-    el('check-payment').hidden = (value.status === 'REVIEW' && !value.recoveryPending) || ['FAILED','REFUNDED','CHARGED_BACK','COMPLETED'].includes(value.status);
-    el('check-payment').textContent = value.recoveryPending ? 'Atualizar Pix' : 'Já paguei · Verificar pagamento';
-    if (value.status !== 'PENDING') { el('copy-pix').disabled=true; el('qr-image').hidden=true; } else el('copy-pix').disabled=false;
-    if(value.status==='COMPLETED'){clearTimeout(timer);el('payment-state').classList.add('status-success');sessionStorage.removeItem(storageKey);location.assign('/obrigado?origem=checkout');return;}
+    el('qr-image').hidden = !hasPix || !value.pix.image;
+    el('pix-code').value = hasPix ? value.pix.code : '';
+    el('copy-pix').disabled = !hasPix;
+    if (hasPix && value.pix.image) el('qr-image').src = value.pix.image;
+    else el('qr-image').removeAttribute('src');
+    const errors = { EXPIRED:'Este Pix expirou. Fale com o suporte.', FAILED:'Pagamento não concluído. Fale com o suporte.', REFUNDED:'Pagamento estornado. Fale com o suporte.', CHARGED_BACK:'Pagamento em análise. Fale com o suporte.' };
+    el('form-alert').textContent = hasPix ? '' : errors[value.status] || 'Pix indisponível no momento. Fale com o suporte.';
     scheduleCheck();
   }
   async function checkStatus() {
     if (!order || checking) return;
-    checking=true;el('check-payment').disabled=true;
+    checking=true;
     try { displayOrder(await callApi('/api/order-status',{token:order.token})); }
-    catch { el('payment-state').textContent='Ainda não conseguimos atualizar a confirmação. Aguarde ou fale com o suporte. Não pague novamente.';scheduleCheck(); }
-    finally { checking=false;el('check-payment').disabled=false; }
+    catch { scheduleCheck(); }
+    finally { checking=false; }
   }
-  el('check-payment').addEventListener('click',checkStatus);document.addEventListener('visibilitychange',()=>{if(document.hidden)clearTimeout(timer);else scheduleCheck();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearTimeout(timer);else scheduleCheck();});
   el('copy-pix').addEventListener('click',async()=>{ try { await navigator.clipboard.writeText(el('pix-code').value);el('copy-pix').textContent='Código copiado!'; } catch { el('pix-code').focus();el('pix-code').select();el('copy-pix').textContent='Selecione e copie o código acima'; } });
   formEl.addEventListener('submit',async e=>{
     e.preventDefault();if(submitting)return;clearErrors();
@@ -101,9 +100,9 @@
     if(event){payload.confirmEmail=read('confirmEmail');payload.participants=[...el('participants').querySelectorAll('.participant')].map(p=>({sameAsBuyer:p.querySelector('select').value==='buyer',name:p.querySelector('[data-participant-name]').value,email:p.querySelector('[data-participant-email]').value}));}
     try{sessionStorage.setItem(storageKey,JSON.stringify({attemptId}));}catch{}
     submitting=true;el('pay-button').disabled=true;el('pay-button').textContent='Gerando seu Pix…';
-    try {displayOrder(await callApi('/api/checkout',payload));el('pix-panel').focus();el('pix-panel').scrollIntoView({behavior:'smooth',block:'start'});}
+    try {displayOrder(await callApi('/api/checkout',payload));const target=el('pix-panel').hidden?el('form-alert'):el('pix-panel');target.focus();target.scrollIntoView({behavior:'smooth',block:'start'});}
     catch(error){Object.entries(error.fields||{}).forEach(([key,message])=>setError(key,message));el('form-alert').textContent=error.fields?error.message:'A resposta não foi concluída. Tente novamente sem alterar os dados ou fale com o suporte. Não faça outro pagamento se já pagou.';el('form-alert').focus();}
-    finally{submitting=false;el('pay-button').disabled=false;el('pay-button').textContent='Gerar Pix';}
+    finally{submitting=false;el('pay-button').disabled=Boolean(order);el('pay-button').textContent='Gerar Pix';}
   });
   async function initialize() {
     try { const response=await fetch('/api/checkout',{cache:'no-store'}); const config=await response.json(); if(!config.available){el('availability').hidden=false;el('availability').textContent='O pagamento está temporariamente indisponível. Fale com nosso suporte para concluir sua matrícula.';el('pay-button').disabled=true;} }
