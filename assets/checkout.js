@@ -35,7 +35,7 @@
   document.body.classList.toggle('event-body', event);
   root.innerHTML = event ? `<div class="event-shell">${banner}${eventDetails}${form}${footer}</div>` : `<div class="checkout-shell"><div class="checkout-grid"><aside>${banner}<section class="card"><div class="secure-bar">${shield}COMPRA 100% SEGURA</div><div class="summary-content">${productRow}<dl class="summary-info"><dt>Garantia</dt><dd>7 dias de garantia</dd><dt>Autor</dt><dd>NETFISCAL</dd><dt>E-mail</dt><dd><a href="mailto:suporte@netfiscal.net">suporte@netfiscal.net</a></dd><dt>Telefone</dt><dd><a class="support-phone" href="${support}" target="_blank" rel="noopener noreferrer">+55 75 98839-3742</a></dd></dl>${coupon}</div></section></aside>${form}</div>${footer}</div>`;
   let quantity = 1, submitting = false, order = null, timer = null, checking = false;
-  const storageKey = `netfiscal-order-${productId}`;
+  const storageKey = `netfiscal-order-firebot-${productId}`;
   let attemptId = crypto.randomUUID();
   const el = id => document.getElementById(id);
   const formEl = el('payment-form');
@@ -54,8 +54,7 @@
     el('participants').innerHTML = Array.from({length:quantity},(_,i)=>`<section class="participant"><h3>Ingresso nº ${i+1}</h3><div class="field"><label for="participant-kind-${i}">Quem irá utilizar este ingresso?</label><select id="participant-kind-${i}" data-participant-kind>${i===0?'<option value="buyer">Eu mesmo (repetir os dados acima)</option>':''}<option value="other">Outra pessoa</option></select></div><div class="participant-fields" ${i===0?'hidden':''}><div class="field"><label for="participant-name-${i}">Nome do participante</label><input id="participant-name-${i}" data-participant-name placeholder="Digite o nome completo do participante" maxlength="120"></div><div class="field"><label for="participant-email-${i}">E-mail do participante</label><input id="participant-email-${i}" data-participant-email type="email" placeholder="Digite o e-mail do participante" maxlength="254"></div></div></section>`).join('');
     [...el('participants').querySelectorAll('.participant')].forEach((p,i)=>{ const select=p.querySelector('select'); if(old[i]){select.value=old[i].same;p.querySelector('[data-participant-name]').value=old[i].name;p.querySelector('[data-participant-email]').value=old[i].email;} const sync=()=>{const same=select.value==='buyer';p.querySelector('.participant-fields').hidden=same;p.querySelectorAll('input').forEach(input=>{input.disabled=same;input.required=!same;});};select.addEventListener('change',sync);sync(); });
   }
-  function adjustQuantity(delta) { quantity = Math.max(1,Math.min(5,quantity+delta)); el('quantity').value = quantity; el('total').textContent = money(quantity*product.price); el('minus').disabled = quantity===1; el('plus').disabled = quantity===5; renderParticipants(); }
-  el('minus')?.addEventListener('click',()=>adjustQuantity(-1));el('plus')?.addEventListener('click',()=>adjustQuantity(1));renderParticipants();
+  if (event) { el('minus').disabled = true; el('plus').disabled = true; renderParticipants(); }
   async function callApi(path, payload) {
     const response = await fetch(path, { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(60000) });
     const data = await response.json();
@@ -107,7 +106,14 @@
   async function initialize() {
     try { const response=await fetch('/api/checkout',{cache:'no-store'}); const config=await response.json(); if(!config.available){el('availability').hidden=false;el('availability').textContent='O pagamento está temporariamente indisponível. Fale com nosso suporte para concluir sua matrícula.';el('pay-button').disabled=true;} }
     catch{el('availability').hidden=false;el('availability').textContent='Não foi possível verificar a disponibilidade do pagamento. Se precisar, fale com o suporte.';el('pay-button').disabled=true;}
-    try{const saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');if(saved?.attemptId)attemptId=saved.attemptId;if(saved?.token){displayOrder(await callApi('/api/order-status',{token:saved.token}));}}catch{}
+    try {
+      const saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');
+      if(saved?.attemptId)attemptId=saved.attemptId;
+      if(saved?.token){displayOrder(await callApi('/api/order-status',{token:saved.token}));return;}
+      // Preserve an already payable or paid legacy order without reusing failed attempts.
+      const legacy=JSON.parse(sessionStorage.getItem(`netfiscal-order-${productId}`)||'null');
+      if(legacy?.token){const previous=await callApi('/api/order-status',{token:legacy.token});if(previous.status==='COMPLETED'||(previous.status==='PENDING'&&previous.pix?.code))displayOrder(previous);}
+    } catch {}
   }
   initialize();
 })();

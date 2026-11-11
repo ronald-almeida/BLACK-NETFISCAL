@@ -2,9 +2,13 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { makePayments } from '../lib/payments.js';
+import { makeFirebotPayments } from '../lib/firebot.js';
 import { memoryStore, fakeEnv, fakeGateway, paidEvent } from '../tests/fixtures.mjs';
+import { firebotEnv, firebotGateway, firebotEvent } from '../tests/firebot-fixtures.mjs';
 const mock = process.argv.includes('--mock');
+const legacy = process.argv.includes('--legacy');
 const testStore = memoryStore();
+const firebotMock = firebotGateway();
 const mockGateway = fakeGateway(), mockTransactions = new Map();
 const mockFetcher = async (url, options) => {
   if (options.method === 'GET') return Response.json(mockTransactions.get(new URL(url).searchParams.get('clientIdentifier')) || {}, { status: mockTransactions.has(new URL(url).searchParams.get('clientIdentifier')) ? 200 : 404 });
@@ -15,7 +19,7 @@ const mockFetcher = async (url, options) => {
     chargeAmount: input.amount, currency: 'BRL', paymentMethod: 'PIX', status: 'PENDING', pixInformation: { qrCode: value.pix.code } });
   return Response.json({ transactionId: value.transactionId, status: 'PENDING', webhookToken: value.webhookToken });
 };
-const payments = mock ? makePayments({store:testStore,env:fakeEnv,fetcher:mockFetcher}) : null;
+const payments = mock ? legacy ? makePayments({store:testStore,env:fakeEnv,fetcher:mockFetcher}) : makeFirebotPayments({store:testStore,env:firebotEnv,fetcher:firebotMock.fetcher}) : null;
 const root = resolve('public');
 const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.woff2':'font/woff2','.pdf':'application/pdf'};
 http.createServer(async(req,res)=>{
@@ -30,11 +34,16 @@ http.createServer(async(req,res)=>{
         else if(url.pathname==='/api/order-status')response=Response.json(await payments.status(input.token));
         else if(url.pathname==='/__test__/paid') {
           const record = await testStore.read(`orders/${input.orderId}`);
-          response=Response.json(await payments.webhook(paidEvent({orderId:input.orderId,amount:record.data.amount})));
+          if(legacy) response=Response.json(await payments.webhook(paidEvent({orderId:input.orderId,amount:record.data.amount})));
+          else {
+            const transaction=firebotMock.transactions.get(record.data.transactionId);transaction.status='PAID';
+            const event=firebotEvent(transaction);
+            response=Response.json(input.webhook===false?{received:true}:await payments.webhook(event.raw,event.signature));
+          }
         }
         else response=new Response('Not found',{status:404});
       } else {
-        const names={'/api/checkout':'checkout','/api/order-status':'order-status','/api/pix-webhook':'pix-webhook'};
+        const names={'/api/checkout':'checkout','/api/order-status':'order-status','/api/pix-webhook':'pix-webhook','/api/firebot-webhook':'firebot-webhook'};
         if(!names[url.pathname]){res.writeHead(404);res.end();return;}
         const handler=(await import(`../api/${names[url.pathname]}.js`))[req.method];
         response=handler?await handler(new Request(url,{method:req.method,headers:req.headers,...(raw.length?{body:raw}:{} )})):new Response('Method not allowed',{status:405});
