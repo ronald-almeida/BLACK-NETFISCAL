@@ -5,12 +5,12 @@ Página de ofertas, três checkouts Pix nativos e boas-vindas. Publicação auto
 | Página | URL | Preço |
 | --- | --- | --- |
 | Ofertas | / | MBA, Pós e Imersão |
-| MBA | /checkout/mba | R$ 397 à vista via Pix |
-| Pós | /checkout/pos | R$ 497 à vista via Pix |
-| Imersão | /checkout/imersao | R$ 697 por ingresso, à vista via Pix |
+| MBA | /checkout/mba | R$ 297 à vista via Pix |
+| Pós | /checkout/pos | R$ 297 à vista via Pix |
+| Imersão | /checkout/imersao | R$ 297 por ingresso, à vista via Pix |
 | Obrigado | /obrigado | Guia e suporte para liberação |
 
-Os valores regulares estão restaurados no servidor (`lib/catalog.js`) e na interface (`assets/checkout.js`). Cobranças já emitidas mantêm o valor original.
+O preço de R$ 297 para cada formação está configurado no servidor (`lib/catalog.js`) e na interface (`assets/checkout.js`). Cobranças já emitidas mantêm o valor original.
 
 O servidor determina os preços em lib/catalog.js. Valores, descontos e status enviados pelo navegador não autorizam pagamentos. O modal inicial apenas seleciona o produto. A adquirente Pix ativa na FireBot foi verificada em 11/11/2026 e limita cobranças a R$ 1.000: novos pedidos de Imersão aceitam um ingresso por compra. Pedidos antigos preservam sua quantidade registrada.
 

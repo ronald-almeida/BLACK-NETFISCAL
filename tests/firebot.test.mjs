@@ -38,7 +38,7 @@ test('a generic rejection or uncertain response never permits another automatic 
   }
 });
 test('FireBot creates all three server-priced products with unbranded local QR and minimal buyer data', async () => {
-  for (const [product, amount] of [['mba',397],['pos',497],['imersao',697]]) {
+  for (const [product, amount] of [['mba',297],['pos',297],['imersao',297]]) {
     const ctx = setup(), result = await ctx.api.create({ ...validInput(product), amount: 5 }, 'test');
     const call = ctx.gateway.calls[0];
     assert.equal(call.url, 'https://firebotbr.com/api/v1/pix/create');
@@ -55,7 +55,7 @@ test('FireBot creates all three server-priced products with unbranded local QR a
 test('FireBot rejects invalid ticket quantities and buyers before a gateway request', async () => {
   const ctx=setup(), input=validInput('imersao'); input.quantity=6;
   await assert.rejects(()=>ctx.api.create(input,'test'),/Quantidade/);
-  input.quantity=2;input.participants.push({name:'Participante de Teste',email:'participante@example.com'});
+  input.quantity=4;input.participants.push(...Array.from({length:3},()=>({name:'Participante de Teste',email:'participante@example.com'})));
   await assert.rejects(()=>ctx.api.create(input,'test'),/um ingresso/);
   await assert.rejects(()=>ctx.api.create({...validInput(),buyer:{name:'A',email:'x',phone:'0',document:'0'}},'test'),/Confira/);
   assert.equal(ctx.gateway.calls.length,0);
@@ -117,7 +117,7 @@ test('FireBot never creates a second payment after a timeout or accepts an incom
   for(const mode of ['timeout','partial','wrong-amount','failed','invalid-json']) {
     let calls=0;
     const ctx=setup({fetcher:async()=>{calls++;if(mode==='timeout')throw new DOMException('private details','TimeoutError');if(mode==='invalid-json')return new Response('<html>private details</html>');
-      return Response.json({success:true,transactionId:'fire_tx_localtest12345',amount:mode==='wrong-amount'?5:397,status:mode==='failed'?'FAILED':'PENDING',...(mode!=='partial'?{pixCopiaECola:'LOCAL_TEST_ONLY_NOT_A_PAYMENT'}:{})});}});
+      return Response.json({success:true,transactionId:'fire_tx_localtest12345',amount:mode==='wrong-amount'?5:297,status:mode==='failed'?'FAILED':'PENDING',...(mode!=='partial'?{pixCopiaECola:'LOCAL_TEST_ONLY_NOT_A_PAYMENT'}:{})});}});
     const input=validInput(),order=await ctx.api.create(input,'test');
     assert.equal(order.status,'REVIEW');assert.equal(order.pix,null);
     await ctx.api.create(input,'test');assert.equal(calls,1);
@@ -126,7 +126,7 @@ test('FireBot never creates a second payment after a timeout or accepts an incom
 });
 test('FireBot preserves the copyable code if local QR rendering fails', async () => {
   const code='LOCAL_TEST_ONLY_'.repeat(1000);
-  const ctx=setup({fetcher:async()=>Response.json({success:true,transactionId:'fire_tx_testfallback123',amount:397,status:'PENDING',pixCopiaECola:code})});
+  const ctx=setup({fetcher:async()=>Response.json({success:true,transactionId:'fire_tx_testfallback123',amount:297,status:'PENDING',pixCopiaECola:code})});
   const order=await ctx.api.create(validInput(),'test');
   assert.equal(order.pix.code,code);assert.equal(order.pix.image,null);assert.equal(order.status,'PENDING');
 });
