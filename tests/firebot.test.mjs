@@ -21,24 +21,24 @@ test('FireBot enforces the acquirer minimum and maximum before creating a charge
 
 test('an explicit minimum-amount rejection is retryable without repeating the original submission', async () => {
   let calls = 0;
-  const ctx = setup({fetcher:async()=>{calls++;return Response.json({success:false,message:'Axxon Pay: amount: Number must be greater than or equal to 10'},{status:400});}});
+  const ctx = setup({fetcher:async()=>{calls++;return Response.json({success:false,message:'Axxon Pay: amount: Number must be greater than or equal to 500'},{status:400});}});
   const input=validInput(), order=await ctx.api.create(input,'test');
   assert.equal(order.status,'FAILED'); assert.equal(order.retryable,true); assert.equal(order.pix,null);
-  assert.equal(order.failure.minimum,10); assert.match(order.failure.message,/R\$\s*10,00/);
+  assert.equal(order.failure.minimum,500); assert.match(order.failure.message,/R\$\s*500,00/);
   await ctx.api.create(input,'test'); assert.equal(calls,1);
   assert.equal((await ctx.api.status(order.token)).retryable,true);
 });
 
 test('a generic rejection or uncertain response never permits another automatic charge', async () => {
   for(const [status,result] of [[400,{message:'Axxon Pay: Erro Sicredi: Request failed with status code 403'}],
-    [500,{message:'Axxon Pay: amount: Number must be greater than or equal to 10'}],
-    [400,{transactionId:'fire_tx_existing12345',message:'Axxon Pay: amount: Number must be greater than or equal to 10'}]]) {
+    [500,{message:'Axxon Pay: amount: Number must be greater than or equal to 500'}],
+    [400,{transactionId:'fire_tx_existing12345',message:'Axxon Pay: amount: Number must be greater than or equal to 500'}]]) {
     const ctx=setup({fetcher:async()=>Response.json(result,{status})}),order=await ctx.api.create(validInput(),'test');
     assert.equal(order.status,'REVIEW'); assert.equal(order.retryable,false);
   }
 });
 test('FireBot creates all three server-priced products with unbranded local QR and minimal buyer data', async () => {
-  for (const [product, amount] of [['mba',6],['pos',6],['imersao',6]]) {
+  for (const [product, amount] of [['mba',397],['pos',497],['imersao',697]]) {
     const ctx = setup(), result = await ctx.api.create({ ...validInput(product), amount: 5 }, 'test');
     const call = ctx.gateway.calls[0];
     assert.equal(call.url, 'https://firebotbr.com/api/v1/pix/create');
@@ -55,6 +55,8 @@ test('FireBot creates all three server-priced products with unbranded local QR a
 test('FireBot rejects invalid ticket quantities and buyers before a gateway request', async () => {
   const ctx=setup(), input=validInput('imersao'); input.quantity=6;
   await assert.rejects(()=>ctx.api.create(input,'test'),/Quantidade/);
+  input.quantity=2;input.participants.push({name:'Participante de Teste',email:'participante@example.com'});
+  await assert.rejects(()=>ctx.api.create(input,'test'),/um ingresso/);
   await assert.rejects(()=>ctx.api.create({...validInput(),buyer:{name:'A',email:'x',phone:'0',document:'0'}},'test'),/Confira/);
   assert.equal(ctx.gateway.calls.length,0);
 });
@@ -115,7 +117,7 @@ test('FireBot never creates a second payment after a timeout or accepts an incom
   for(const mode of ['timeout','partial','wrong-amount','failed','invalid-json']) {
     let calls=0;
     const ctx=setup({fetcher:async()=>{calls++;if(mode==='timeout')throw new DOMException('private details','TimeoutError');if(mode==='invalid-json')return new Response('<html>private details</html>');
-      return Response.json({success:true,transactionId:'fire_tx_localtest12345',amount:mode==='wrong-amount'?5:6,status:mode==='failed'?'FAILED':'PENDING',...(mode!=='partial'?{pixCopiaECola:'LOCAL_TEST_ONLY_NOT_A_PAYMENT'}:{})});}});
+      return Response.json({success:true,transactionId:'fire_tx_localtest12345',amount:mode==='wrong-amount'?5:397,status:mode==='failed'?'FAILED':'PENDING',...(mode!=='partial'?{pixCopiaECola:'LOCAL_TEST_ONLY_NOT_A_PAYMENT'}:{})});}});
     const input=validInput(),order=await ctx.api.create(input,'test');
     assert.equal(order.status,'REVIEW');assert.equal(order.pix,null);
     await ctx.api.create(input,'test');assert.equal(calls,1);
@@ -124,7 +126,7 @@ test('FireBot never creates a second payment after a timeout or accepts an incom
 });
 test('FireBot preserves the copyable code if local QR rendering fails', async () => {
   const code='LOCAL_TEST_ONLY_'.repeat(1000);
-  const ctx=setup({fetcher:async()=>Response.json({success:true,transactionId:'fire_tx_testfallback123',amount:6,status:'PENDING',pixCopiaECola:code})});
+  const ctx=setup({fetcher:async()=>Response.json({success:true,transactionId:'fire_tx_testfallback123',amount:397,status:'PENDING',pixCopiaECola:code})});
   const order=await ctx.api.create(validInput(),'test');
   assert.equal(order.pix.code,code);assert.equal(order.pix.image,null);assert.equal(order.status,'PENDING');
 });
@@ -138,27 +140,6 @@ test('FireBot server rate limit persists across instances', async () => {
   await assert.rejects(()=>second.create(validInput(),'test'),/Muitas tentativas/);assert.equal(ctx.gateway.calls.length,6);
 });
 
-test('authorized Imersão test permits exactly one extra charge without relaxing the general limit', async () => {
-  const ctx=setup();ctx.advance(Date.parse('2026-11-11T23:30:00Z')-Date.now());
-  for(let i=0;i<6;i++)await ctx.api.create(validInput(),'test');
-  const testInput=()=>({...validInput('imersao'),buyer:{name:'Teste Tecnico Checkout',email:'checkout-test@example.com',phone:'11999998888',document:'11144477735'},confirmEmail:'checkout-test@example.com'});
-  await assert.rejects(()=>ctx.api.create({...testInput(),product:'pos'},'test'),/Muitas tentativas/);
-  await assert.rejects(()=>ctx.api.create({...testInput(),buyer:{...testInput().buyer,name:'Outro Nome'}},'test'),/Muitas tentativas/);
-  const input=testInput(),order=await ctx.api.create(input,'test');assert.equal(order.amount,6);assert.equal(order.status,'PENDING');
-  assert.equal((await ctx.api.create(input,'test')).orderId,order.orderId);
-  await assert.rejects(()=>ctx.api.create(testInput(),'test'),/Muitas tentativas/);
-  for(let i=0;i<6;i++)await ctx.api.create(validInput(),'another-ip');
-  await assert.rejects(()=>ctx.api.create(testInput(),'another-ip'),/Muitas tentativas/);
-  assert.equal(ctx.gateway.calls.length,13);
-});
-
-test('the temporary Imersão test grant expires and cannot be reused later', async()=>{
-  const ctx=setup();ctx.advance(Date.parse('2026-11-12T04:30:00Z')-Date.now());
-  for(let i=0;i<6;i++)await ctx.api.create(validInput(),'test');
-  const input={...validInput('imersao'),buyer:{name:'Teste Tecnico Checkout',email:'checkout-test@example.com',phone:'11999998888',document:'11144477735'},confirmEmail:'checkout-test@example.com'};
-  await assert.rejects(()=>ctx.api.create(input,'test'),/Muitas tentativas/);
-  assert.equal(ctx.gateway.calls.length,6);
-});
 test('a slow FireBot lookup cannot undo a concurrent signed refund', async () => {
   const ctx=setup();let resolveLookup,started;const waiting=new Promise(r=>{started=r;});
   const api=makeFirebotPayments({store:ctx.store,env:firebotEnv,now:()=>Date.now()+20000,logger:{},fetcher:async()=>{started();return new Promise(r=>{resolveLookup=r;});}});

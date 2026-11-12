@@ -1,10 +1,9 @@
 'use strict';
 (() => {
   const catalog = {
-    // Temporary live payment test; regular prices: 397, 497 and 697.
-    mba: { name: 'MBA em Reforma Tributária & Gestão Tributária', title: 'MBA - TURMA 7 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 6 },
-    pos: { name: 'Pós em Planejamento Tributário', title: 'PÓS - TURMA 2 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 6 },
-    imersao: { name: 'Imersão Reforma Tributária', title: 'Imersão Reforma Tributária', price: 6 }
+    mba: { name: 'MBA em Reforma Tributária & Gestão Tributária', title: 'MBA - TURMA 7 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 397 },
+    pos: { name: 'Pós em Planejamento Tributário', title: 'PÓS - TURMA 2 (11/26) - BLACK NETFISCAL (Lote 1 - Apenas 20 vagas)', price: 497 },
+    imersao: { name: 'Imersão Reforma Tributária', title: 'Imersão Reforma Tributária', price: 697 }
   };
   const productId = location.pathname.split('/').filter(Boolean).pop() === 'checkout.html' ? new URLSearchParams(location.search).get('produto') : location.pathname.split('/').filter(Boolean).pop();
   const product = Object.hasOwn(catalog, productId) ? catalog[productId] : null;
